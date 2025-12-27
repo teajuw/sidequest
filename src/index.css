@@ -5,6 +5,14 @@
   --color-dark-surface: #1a1a1a;
   --color-dark-border: #2a2a2a;
   --color-dark-hover: #252525;
+
+  /* macOS Traffic Light Colors */
+  --color-success: #34c759;
+  --color-success-hover: #30d158;
+  --color-warning: #ffd60a;
+  --color-warning-hover: #ffd426;
+  --color-danger: #ff453a;
+  --color-danger-hover: #ff6961;
 }
 
 :root {

@@ -37,13 +37,13 @@ export const StatsPage: React.FC = () => {
           {/* Active Quests */}
           <div className="bg-dark-surface border border-dark-border rounded-xl p-6 shadow-lg">
             <div className="text-gray-400 text-sm mb-2">Active Quests</div>
-            <div className="text-4xl font-bold text-blue-400">{activeQuests}</div>
+            <div className="text-4xl font-bold text-warning">{activeQuests}</div>
           </div>
 
           {/* Completed Quests */}
           <div className="bg-dark-surface border border-dark-border rounded-xl p-6 shadow-lg">
             <div className="text-gray-400 text-sm mb-2">Completed Quests</div>
-            <div className="text-4xl font-bold text-emerald-400">
+            <div className="text-4xl font-bold text-success">
               {completedQuests}
             </div>
           </div>
@@ -51,7 +51,7 @@ export const StatsPage: React.FC = () => {
           {/* Overall Progress */}
           <div className="bg-dark-surface border border-dark-border rounded-xl p-6 shadow-lg">
             <div className="text-gray-400 text-sm mb-2">Overall Progress</div>
-            <div className="text-4xl font-bold text-purple-400">
+            <div className="text-4xl font-bold text-success">
               {overallProgress}%
             </div>
           </div>
@@ -64,13 +64,13 @@ export const StatsPage: React.FC = () => {
             <span className="text-gray-400">
               {completedTasks} of {totalTasks} tasks completed
             </span>
-            <span className="text-emerald-400 font-semibold text-lg">
+            <span className="text-success font-semibold text-lg">
               {overallProgress}%
             </span>
           </div>
           <div className="w-full bg-dark-bg rounded-full h-4">
             <div
-              className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-4 rounded-full transition-all duration-500"
+              className="bg-gradient-to-r from-success to-success-hover h-4 rounded-full transition-all duration-500"
               style={{ width: `${overallProgress}%` }}
             />
           </div>
@@ -105,9 +105,9 @@ export const StatsPage: React.FC = () => {
                         <h3 className="font-semibold text-white">
                           {quest.title}
                         </h3>
-                        {quest.starred && <span>⭐</span>}
+                        {quest.starred && <span className="text-warning">⭐</span>}
                         {quest.completed && (
-                          <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-900/30 text-emerald-300 border border-emerald-700/50">
+                          <span className="px-2 py-0.5 text-xs rounded-full bg-success/20 text-success border border-success/50">
                             Completed
                           </span>
                         )}
@@ -118,7 +118,9 @@ export const StatsPage: React.FC = () => {
                     </div>
                     <div className="w-full bg-dark-bg rounded-full h-2">
                       <div
-                        className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          questProgress === 100 ? 'bg-success' : 'bg-warning'
+                        }`}
                         style={{ width: `${questProgress}%` }}
                       />
                     </div>

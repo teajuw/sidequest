@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Task } from '../types';
+import { StarIcon, XMarkIcon, CheckIcon } from './Icons';
 
 interface TaskCardProps {
   task: Task;
@@ -41,29 +42,17 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         task.completed ? 'opacity-60' : ''
       }`}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-3">
         {/* Checkbox */}
         <button
           onClick={() => onToggleComplete(questId, task.id)}
-          className={`mt-0.5 w-5 h-5 rounded border-2 flex-shrink-0 transition-all ${
+          className={`w-5 h-5 rounded border-2 flex-shrink-0 transition-all ${
             task.completed
-              ? 'bg-emerald-500 border-emerald-500'
-              : 'border-gray-500 hover:border-emerald-400'
+              ? 'bg-success border-success'
+              : 'border-gray-500 hover:border-success-hover'
           }`}
         >
-          {task.completed && (
-            <svg
-              className="w-full h-full text-white"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="3"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path d="M5 13l4 4L19 7" />
-            </svg>
-          )}
+          {task.completed && <CheckIcon className="w-full h-full text-white" />}
         </button>
 
         {/* Task content */}
@@ -76,7 +65,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               onBlur={handleSave}
               onKeyDown={handleKeyDown}
               autoFocus
-              className="w-full bg-dark-bg border border-gray-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-emerald-500"
+              className="w-full bg-dark-bg border border-gray-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-success"
             />
           ) : (
             <p
@@ -93,27 +82,21 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         {/* Star button */}
         <button
           onClick={() => onUpdate(questId, task.id, { starred: !task.starred })}
-          className="flex-shrink-0 text-gray-500 hover:text-yellow-400 transition-colors"
+          className={`flex-shrink-0 w-5 h-5 transition-all ${
+            task.starred
+              ? 'text-warning scale-110 hover:scale-125'
+              : 'text-gray-500 hover:text-warning hover:scale-110'
+          }`}
         >
-          {task.starred ? '⭐' : '☆'}
+          <StarIcon filled={task.starred} className="w-full h-full" />
         </button>
 
         {/* Delete button */}
         <button
           onClick={() => onDelete(questId, task.id)}
-          className="flex-shrink-0 text-gray-500 hover:text-red-400 transition-colors"
+          className="flex-shrink-0 w-4 h-4 text-gray-500 hover:text-danger transition-colors"
         >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <XMarkIcon className="w-full h-full" />
         </button>
       </div>
     </div>
