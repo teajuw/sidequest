@@ -218,7 +218,13 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest }) => {
         }}
       >
         {[...quest.tasks]
-          .sort((a, b) => b.order - a.order)
+          .sort((a, b) => {
+            // Completed tasks always go to the bottom
+            if (a.completed && !b.completed) return 1;
+            if (!a.completed && b.completed) return -1;
+            // Within same completion status, sort by order (higher order = first)
+            return b.order - a.order;
+          })
           .map((task) => (
             <TaskCard
               key={task.id}
