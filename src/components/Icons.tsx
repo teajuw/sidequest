@@ -5,13 +5,13 @@ export const PinIcon = ({ filled = false, className = "" }: { filled?: boolean; 
     className={`transition-transform ${className}`}
     fill={filled ? "currentColor" : "none"}
     viewBox="0 0 24 24"
-    strokeWidth={filled ? 0 : 1.5}
+    strokeWidth={filled ? 0 : 2}
     stroke="currentColor"
   >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
-      d="M15 11.25l1.5 1.5.75-.75V8.758l2.276-.61a3 3 0 10-3.675-3.675l-.61 2.277H12l-.75.75 1.5 1.5M15 11.25l-8.47 8.47c-.34.34-.8.53-1.28.53s-.94.19-1.28.53l-.97.97-.75-.75.97-.97c.34-.34.53-.8.53-1.28s.19-.94.53-1.28L12 9.75"
+      d="M12 14v8m-4-13h8a2 2 0 012 2v1a2 2 0 01-2 2h-1l-.5 4h-5l-.5-4H8a2 2 0 01-2-2v-1a2 2 0 012-2z"
     />
   </svg>
 );

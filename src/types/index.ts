@@ -14,6 +14,7 @@ export interface Quest {
   questLine?: string;
   createdAt: number;
   completedAt?: number;
+  lastModified: number;
   order: number;
   pinned: boolean;
 }

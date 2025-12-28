@@ -2,7 +2,7 @@ import React from 'react';
 import type { Quest } from '../types';
 import { TaskCard } from './TaskCard';
 import { useQuests } from '../contexts/QuestContext';
-import { TrashIcon, ArrowLeftIcon, PencilIcon, PinIcon } from './Icons';
+import { TrashIcon, ArrowLeftIcon, PencilIcon, StarIcon } from './Icons';
 
 interface QuestCardProps {
   quest: Quest;
@@ -191,7 +191,7 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest }) => {
                 : 'text-gray-500 hover:text-white'
             }`}
           >
-            <PinIcon filled={quest.pinned} className="w-full h-full" />
+            <StarIcon filled={quest.pinned} className="w-full h-full" />
           </button>
         </div>
       </div>
@@ -274,15 +274,16 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest }) => {
         `}
         style={{
           background: quest.status === 'available'
-            ? (totalTasks > 0 ? '#4b5563' : '#374151')
+            ? (totalTasks > 0 ? '#eab308' : '#374151')
             : quest.status === 'complete'
-              ? 'white'
+              ? '#10b981'
               : '#374151',
           color: quest.status === 'available'
-            ? (totalTasks > 0 ? 'white' : '#9ca3af')
+            ? (totalTasks > 0 ? '#1f2937' : '#9ca3af')
             : quest.status === 'complete'
-              ? '#1f2937'
-              : (quest.status === 'tracking' && allTasksComplete ? 'white' : '#9ca3af')
+              ? '#6b7280'
+              : (quest.status === 'tracking' && allTasksComplete ? 'white' : '#9ca3af'),
+          opacity: quest.status === 'complete' ? 0.5 : 1
         }}
       >
         {/* Progress bar for tracking status - yellow until complete, then smooth transition to green */}

@@ -22,7 +22,7 @@ export const HomePage: React.FC = () => {
         {/* Hero Section */}
         <div className="text-center mb-16">
           <h1 className="text-6xl font-bold text-white mb-4">
-            Welcome to <span className="text-success">Side Quest</span>
+            Welcome to <span className="text-success">SideQuest</span>
           </h1>
           <p className="text-xl text-gray-400 mb-8">
             Your epic quest management system. Plan, track, and complete your quests with ease.
