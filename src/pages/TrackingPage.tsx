@@ -1,13 +1,13 @@
 import React from 'react';
 import { useQuests } from '../contexts/QuestContext';
 import { QuestCard } from '../components/QuestCard';
-import { CheckIcon } from '../components/Icons';
+import { MapIcon } from '../components/Icons';
 
-export const CompletePage: React.FC = () => {
+export const TrackingPage: React.FC = () => {
   const { quests } = useQuests();
 
-  const completedQuests = quests
-    .filter((q) => q.status === 'complete')
+  const trackingQuests = quests
+    .filter((q) => q.status === 'tracking')
     .sort((a, b) => {
       // Pinned quests first
       if (a.pinned && !b.pinned) return -1;
@@ -22,32 +22,28 @@ export const CompletePage: React.FC = () => {
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-white mb-4 flex items-center justify-center gap-3">
-            <CheckIcon className="w-10 h-10 text-success" />
-            Completed Quests
+            <MapIcon className="w-10 h-10 text-warning" />
+            Tracking Quests
           </h1>
-          <p className="text-gray-400 mt-2">
-            {completedQuests.length} {completedQuests.length === 1 ? 'quest' : 'quests'} completed
-          </p>
+          <p className="text-gray-400 mt-2">Active quests you're currently working on</p>
         </div>
 
-        {/* Completed Quests Grid */}
-        {completedQuests.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-20 h-20 mx-auto mb-4 text-gray-600">
-              <CheckIcon className="w-full h-full" />
-            </div>
-            <h2 className="text-2xl font-semibold text-gray-400 mb-2">
-              No Completed Quests Yet
-            </h2>
-            <p className="text-gray-500">
-              Complete your first quest to see it here!
-            </p>
-          </div>
-        ) : (
+        {/* Tracking Quests */}
+        {trackingQuests.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {completedQuests.map((quest) => (
+            {trackingQuests.map((quest) => (
               <QuestCard key={quest.id} quest={quest} />
             ))}
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <div className="w-20 h-20 mx-auto mb-4 text-gray-600">
+              <MapIcon className="w-full h-full" />
+            </div>
+            <h2 className="text-2xl font-semibold text-gray-400 mb-2">
+              No Tracking Quests
+            </h2>
+            <p className="text-gray-500">Start tracking a quest from the Available tab!</p>
           </div>
         )}
       </div>

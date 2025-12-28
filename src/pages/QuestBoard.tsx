@@ -23,28 +23,34 @@ export const QuestBoard: React.FC = () => {
   return (
     <div className="min-h-screen bg-dark-bg p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Pinned Quests Section */}
-        {pinnedQuests.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-300 mb-4 flex items-center gap-2">
-              <span className="text-warning">⭐</span>
-              Pinned Quests
-              <span className="text-sm text-gray-500 font-normal">
-                ({pinnedQuests.length}/3)
-              </span>
-            </h2>
+        {/* Pinned Quests Section - Always Visible */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-300 mb-4 flex items-center gap-2">
+            <span className="text-warning">📌</span>
+            Pinned Quests
+            <span className="text-sm text-gray-500 font-normal">
+              ({pinnedQuests.length}/3)
+            </span>
+          </h2>
+          {pinnedQuests.length > 0 ? (
             <div className="flex flex-wrap gap-6">
               {pinnedQuests.map((quest) => (
                 <QuestCard key={quest.id} quest={quest} />
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="bg-dark-surface border-2 border-dashed border-gray-700 rounded-xl p-8 text-center">
+              <p className="text-gray-500">
+                Pin your top 3 priority quests to keep them at the top
+              </p>
+            </div>
+          )}
+        </div>
 
         {/* Add Quest Button */}
-        <div className="mb-6">
+        <div className="mb-6 flex justify-center">
           {isAddingQuest ? (
-            <div className="bg-dark-surface border border-dark-border rounded-xl p-5 shadow-lg max-w-2xl">
+            <div className="bg-dark-surface border border-dark-border rounded-xl p-5 shadow-lg max-w-2xl w-full">
               <input
                 type="text"
                 value={newQuestTitle}

@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Task } from '../types';
-import { StarIcon, XMarkIcon, CheckIcon } from './Icons';
+import { XMarkIcon, CheckIcon } from './Icons';
+import { useQuests } from '../contexts/QuestContext';
 
 interface TaskCardProps {
   task: Task;
@@ -19,6 +20,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 }) => {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editText, setEditText] = React.useState(task.description);
+
+  // Get quest status and completion state to determine checkbox color
+  const { quests } = useQuests();
+  const quest = quests.find(q => q.id === questId);
+  const questStatus = quest?.status;
+
+  // Check if all tasks are complete
+  const allTasksComplete = quest ? quest.tasks.every(t => t.completed) && quest.tasks.length > 0 : false;
 
   const handleSave = () => {
     if (editText.trim()) {
@@ -48,8 +57,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           onClick={() => onToggleComplete(questId, task.id)}
           className={`w-5 h-5 rounded border-2 flex-shrink-0 transition-all ${
             task.completed
-              ? 'bg-success border-success'
-              : 'border-gray-500 hover:border-success-hover'
+              ? (questStatus === 'tracking' && !allTasksComplete)
+                ? 'bg-warning border-warning'
+                : 'bg-success border-success'
+              : (questStatus === 'tracking' && !allTasksComplete)
+                ? 'border-gray-500 hover:border-warning'
+                : 'border-gray-500 hover:border-success-hover'
           }`}
         >
           {task.completed && <CheckIcon className="w-full h-full text-white" />}
@@ -70,26 +83,14 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           ) : (
             <p
               onClick={() => setIsEditing(true)}
-              className={`text-sm cursor-pointer ${
-                task.completed ? 'line-through text-gray-500' : 'text-gray-200'
+              className={`text-sm font-semibold cursor-pointer ${
+                task.completed ? 'line-through text-gray-500' : 'text-white'
               }`}
             >
               {task.description}
             </p>
           )}
         </div>
-
-        {/* Star button */}
-        <button
-          onClick={() => onUpdate(questId, task.id, { starred: !task.starred })}
-          className={`flex-shrink-0 w-5 h-5 transition-all ${
-            task.starred
-              ? 'text-warning scale-110 hover:scale-125'
-              : 'text-gray-500 hover:text-warning hover:scale-110'
-          }`}
-        >
-          <StarIcon filled={task.starred} className="w-full h-full" />
-        </button>
 
         {/* Delete button */}
         <button

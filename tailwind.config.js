@@ -14,7 +14,22 @@ export default {
           border: '#2a2a2a',
           hover: '#252525',
         }
-      }
+      },
+      keyframes: {
+        exit: {
+          '0%': {
+            opacity: '1',
+            transform: 'scale(1) translateX(0)',
+          },
+          '100%': {
+            opacity: '0',
+            transform: 'scale(0.9) translateX(30px)',
+          },
+        },
+      },
+      animation: {
+        exit: 'exit 0.3s ease-out forwards',
+      },
     },
   },
   plugins: [],

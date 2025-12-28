@@ -2,7 +2,7 @@ import React from 'react';
 import type { Quest } from '../types';
 import { TaskCard } from './TaskCard';
 import { useQuests } from '../contexts/QuestContext';
-import { StarIcon, TrashIcon, CheckIcon } from './Icons';
+import { TrashIcon, ArrowLeftIcon, PencilIcon, PinIcon } from './Icons';
 
 interface QuestCardProps {
   quest: Quest;
@@ -16,17 +16,28 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest }) => {
     updateTask,
     deleteTask,
     toggleTaskComplete,
+    startTracking,
+    completeQuest,
+    resumeTracking,
+    togglePinQuest,
+    reorderQuest,
   } = useQuests();
 
   const [isAddingTask, setIsAddingTask] = React.useState(false);
   const [newTaskText, setNewTaskText] = React.useState('');
-  const [isEditingTitle, setIsEditingTitle] = React.useState(false);
-  const [editTitle, setEditTitle] = React.useState(quest.title);
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [isDraggedOver, setIsDraggedOver] = React.useState(false);
+  const [isExiting, setIsExiting] = React.useState(false);
 
   const completedTasks = quest.tasks.filter((t) => t.completed).length;
   const totalTasks = quest.tasks.length;
   const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
   const allTasksComplete = totalTasks > 0 && completedTasks === totalTasks;
+
+  // Theme colors based on status
+  const themeTextClass = quest.status === 'available' ? 'text-danger' : quest.status === 'tracking' ? 'text-warning' : 'text-success';
+  const themeBgClass = quest.status === 'available' ? 'bg-danger' : quest.status === 'tracking' ? 'bg-warning' : 'bg-success';
 
   const handleAddTask = () => {
     if (newTaskText.trim()) {
@@ -36,106 +47,159 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest }) => {
     }
   };
 
-  const handleSaveTitle = () => {
-    if (editTitle.trim()) {
-      updateQuest(quest.id, { title: editTitle.trim() });
-      setIsEditingTitle(false);
+  const handleMoveBack = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      if (quest.status === 'tracking') {
+        updateQuest(quest.id, { status: 'available' });
+      } else if (quest.status === 'complete') {
+        resumeTracking(quest.id);
+      }
+      setIsExiting(false);
+    }, 300);
+  };
+
+  const handleMoveForward = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      if (quest.status === 'available') {
+        startTracking(quest.id);
+      } else if (quest.status === 'tracking' && allTasksComplete) {
+        completeQuest(quest.id);
+      }
+      setIsExiting(false);
+    }, 300);
+  };
+
+  const getForwardButtonText = () => {
+    if (quest.status === 'available') return totalTasks === 0 ? 'Add tasks first' : 'Start Tracking';
+    if (quest.status === 'tracking') {
+      if (totalTasks === 0) return 'Add tasks to complete';
+      if (allTasksComplete) return 'Complete Quest';
+      return `${completedTasks}/${totalTasks} Complete`;
+    }
+    return 'Complete Quest';
+  };
+
+  const canMoveForward = (quest.status === 'available' && totalTasks > 0) || (quest.status === 'tracking' && allTasksComplete);
+
+  const handleDragStart = (e: React.DragEvent) => {
+    setIsDragging(true);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify({
+      questId: quest.id,
+      questStatus: quest.status
+    }));
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    setIsDraggedOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only clear if we're actually leaving the card, not entering a child
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+
+    if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+      setIsDraggedOver(false);
     }
   };
 
-  const handleCompleteQuest = () => {
-    if (allTasksComplete) {
-      // TODO: Play sound here
-      updateQuest(quest.id, { completed: true });
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggedOver(false);
+
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+      const { questId: draggedQuestId, questStatus: draggedQuestStatus } = data;
+
+      // Only allow reordering within the same status
+      if (draggedQuestId !== quest.id && draggedQuestStatus === quest.status) {
+        // Reorder: place dragged quest before this quest
+        reorderQuest(draggedQuestId, quest.id);
+      }
+    } catch (error) {
+      console.error('Error parsing drag data:', error);
     }
+  };
+
+  const handlePinClick = () => {
+    togglePinQuest(quest.id);
   };
 
   return (
-    <div className="bg-dark-surface border border-dark-border rounded-xl p-5 shadow-lg hover:border-gray-600 transition-all w-full max-w-md">
+    <div
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`bg-dark-surface border rounded-xl p-5 shadow-lg w-full cursor-move ${
+        isDragging ? 'opacity-50 scale-95 transition-all' : ''
+      } ${
+        isDraggedOver ? 'border-white scale-105 shadow-2xl transition-all' : 'border-dark-border hover:border-gray-600 transition-all'
+      } ${
+        isExiting ? 'animate-exit' : ''
+      }`}
+    >
       {/* Quest Header */}
       <div className="flex items-center justify-between mb-4 gap-3">
-        <div className="flex-1 min-w-0">
-          {isEditingTitle ? (
-            <input
-              type="text"
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-              onBlur={handleSaveTitle}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleSaveTitle();
-                if (e.key === 'Escape') {
-                  setEditTitle(quest.title);
-                  setIsEditingTitle(false);
-                }
-              }}
-              autoFocus
-              className="w-full bg-dark-bg border border-gray-600 rounded px-2 py-1 text-xl font-bold focus:outline-none focus:border-success"
-            />
-          ) : (
-            <h2
-              onClick={() => setIsEditingTitle(true)}
-              className="text-xl font-bold text-white cursor-pointer hover:text-success transition-colors truncate"
-            >
-              {quest.title}
-            </h2>
-          )}
-        </div>
+        <h2 className={`text-xl font-bold text-white flex-1 truncate`}>
+          {quest.title}
+        </h2>
 
         <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Star button */}
+          {/* Back button */}
           <button
-            onClick={() => updateQuest(quest.id, { starred: !quest.starred })}
-            className={`w-5 h-5 transition-all ${
-              quest.starred
-                ? 'text-warning scale-110 hover:scale-125'
-                : 'text-gray-500 hover:text-warning hover:scale-110'
+            onClick={handleMoveBack}
+            disabled={quest.status === 'available'}
+            className={`w-5 h-5 transition-colors ${
+              quest.status === 'available'
+                ? 'text-gray-700 cursor-not-allowed'
+                : 'text-gray-500 hover:text-white'
             }`}
           >
-            <StarIcon filled={quest.starred} className="w-full h-full" />
+            <ArrowLeftIcon className="w-full h-full" />
           </button>
 
-          {/* Delete button */}
+          {/* Edit button */}
           <button
-            onClick={() => {
-              if (confirm(`Delete quest "${quest.title}"?`)) {
-                deleteQuest(quest.id);
-              }
-            }}
-            className="w-5 h-5 text-gray-500 hover:text-danger transition-colors"
+            onClick={() => setIsEditModalOpen(true)}
+            className="w-5 h-5 text-gray-500 hover:text-white transition-colors"
           >
-            <TrashIcon className="w-full h-full" />
+            <PencilIcon className="w-full h-full" />
+          </button>
+
+          {/* Pin button */}
+          <button
+            onClick={handlePinClick}
+            className={`w-5 h-5 transition-colors ${
+              quest.pinned
+                ? 'text-white'
+                : 'text-gray-500 hover:text-white'
+            }`}
+          >
+            <PinIcon filled={quest.pinned} className="w-full h-full" />
           </button>
         </div>
       </div>
 
-      {/* Progress Bar and Fraction */}
-      {totalTasks > 0 && (
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-sm text-gray-400">
-              {completedTasks}/{totalTasks} tasks
-            </span>
-            <span className={`text-sm font-semibold ${
-              allTasksComplete ? 'text-success' : 'text-warning'
-            }`}>
-              {Math.round(progressPercent)}%
-            </span>
-          </div>
-          <div className="w-full bg-dark-bg rounded-full h-2.5">
-            <div
-              className={`h-2.5 rounded-full transition-all duration-300 ${
-                allTasksComplete ? 'bg-success' : 'bg-warning'
-              }`}
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-        </div>
-      )}
-
       {/* Quest Line Badge */}
       {quest.questLine && (
         <div className="mb-3">
-          <span className="inline-block px-2 py-1 text-xs rounded-full bg-purple-900/30 text-purple-300 border border-purple-700/50">
+          <span className="inline-block px-2 py-1 text-xs rounded-full bg-gray-800 text-gray-300 border border-gray-600">
             {quest.questLine}
           </span>
         </div>
@@ -171,15 +235,9 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest }) => {
             }}
             placeholder="Enter task description..."
             autoFocus
-            className="w-full bg-dark-bg border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-success mb-2"
+            className="w-full bg-dark-bg border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-400 mb-2"
           />
           <div className="flex gap-2">
-            <button
-              onClick={handleAddTask}
-              className="flex-1 px-4 py-2 bg-success hover:bg-success-hover rounded text-sm font-medium transition-colors"
-            >
-              Add
-            </button>
             <button
               onClick={() => {
                 setNewTaskText('');
@@ -189,30 +247,120 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest }) => {
             >
               Cancel
             </button>
+            <button
+              onClick={handleAddTask}
+              className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm font-medium transition-colors"
+            >
+              Add
+            </button>
           </div>
         </div>
       ) : (
         <button
           onClick={() => setIsAddingTask(true)}
-          className="w-full py-2 border-2 border-dashed border-gray-600 hover:border-success rounded-lg text-gray-400 hover:text-success transition-all text-sm font-medium mb-3"
+          className="w-full py-2 border-2 border-dashed border-gray-600 hover:border-gray-400 rounded-lg text-gray-400 hover:text-white transition-all text-sm font-medium mb-3"
         >
           + Add Task
         </button>
       )}
 
-      {/* Complete Quest Button */}
+      {/* Progress/Forward Button */}
       <button
-        onClick={handleCompleteQuest}
-        disabled={!allTasksComplete}
-        className={`w-full py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
-          allTasksComplete
-            ? 'bg-success hover:bg-success-hover text-white shadow-lg shadow-success/20 cursor-pointer'
-            : 'bg-gray-800 text-gray-600 cursor-not-allowed'
-        }`}
+        onClick={quest.status === 'complete' ? () => resumeTracking(quest.id) : handleMoveForward}
+        disabled={quest.status !== 'complete' && !canMoveForward}
+        className={`
+          w-full py-4 rounded-lg font-bold text-lg relative overflow-hidden
+          ${quest.status === 'complete' || canMoveForward ? 'cursor-pointer' : 'cursor-not-allowed'}
+        `}
+        style={{
+          background: quest.status === 'available'
+            ? (totalTasks > 0 ? '#4b5563' : '#374151')
+            : quest.status === 'complete'
+              ? 'white'
+              : '#374151',
+          color: quest.status === 'available'
+            ? (totalTasks > 0 ? 'white' : '#9ca3af')
+            : quest.status === 'complete'
+              ? '#1f2937'
+              : (quest.status === 'tracking' && allTasksComplete ? 'white' : '#9ca3af')
+        }}
       >
-        <CheckIcon className="w-5 h-5" />
-        {allTasksComplete ? 'Complete Quest' : 'Complete All Tasks First'}
+        {/* Progress bar for tracking status - yellow until complete, then smooth transition to green */}
+        {quest.status === 'tracking' && totalTasks > 0 && (
+          <div
+            className={`absolute inset-0 ${
+              allTasksComplete
+                ? 'bg-success'
+                : 'bg-warning'
+            }`}
+            style={{
+              width: `${progressPercent}%`,
+              transition: allTasksComplete
+                ? 'width 0.5s ease-out, background-color 0.8s ease-in-out'
+                : 'width 0.5s ease-out'
+            }}
+          />
+        )}
+        <span className="relative z-10">{getForwardButtonText()}</span>
       </button>
+
+      {/* Completed Date at bottom */}
+      {quest.status === 'complete' && quest.completedAt && (
+        <div className="mt-3 text-center">
+          <p className="text-xs text-gray-500">
+            Completed on {new Date(quest.completedAt).toLocaleDateString('en-US', {
+              weekday: 'short',
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })}
+          </p>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {isEditModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setIsEditModalOpen(false)}
+        >
+          <div
+            className="bg-dark-surface border border-dark-border rounded-xl p-6 max-w-md w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-2xl font-bold text-white mb-4">Edit Quest</h3>
+            <input
+              type="text"
+              defaultValue={quest.title}
+              onBlur={(e) => {
+                if (e.target.value.trim()) {
+                  updateQuest(quest.id, { title: e.target.value.trim() });
+                }
+              }}
+              className="w-full bg-dark-bg border border-gray-600 rounded px-4 py-3 text-lg font-bold focus:outline-none focus:border-gray-400 mb-4"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  if (confirm(`Delete quest "${quest.title}"?`)) {
+                    deleteQuest(quest.id);
+                    setIsEditModalOpen(false);
+                  }
+                }}
+                className="flex-1 px-4 py-2 bg-danger hover:bg-danger-hover rounded-lg font-medium transition-colors"
+              >
+                Delete Quest
+              </button>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
