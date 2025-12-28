@@ -21,6 +21,7 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest }) => {
     resumeTracking,
     togglePinQuest,
     reorderQuest,
+    reorderTask,
   } = useQuests();
 
   const [isAddingTask, setIsAddingTask] = React.useState(false);
@@ -206,17 +207,29 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest }) => {
       )}
 
       {/* Tasks */}
-      <div className="space-y-2 mb-3">
-        {quest.tasks.map((task) => (
-          <TaskCard
-            key={task.id}
-            task={task}
-            questId={quest.id}
-            onToggleComplete={toggleTaskComplete}
-            onDelete={deleteTask}
-            onUpdate={updateTask}
-          />
-        ))}
+      <div
+        className="space-y-2 mb-3"
+        onDragStart={(e) => {
+          // Check if the drag started from a task card - if so, prevent quest card drag
+          const target = e.target as HTMLElement;
+          if (target.closest('[data-task-card]')) {
+            e.stopPropagation();
+          }
+        }}
+      >
+        {[...quest.tasks]
+          .sort((a, b) => b.order - a.order)
+          .map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              questId={quest.id}
+              onToggleComplete={toggleTaskComplete}
+              onDelete={deleteTask}
+              onUpdate={updateTask}
+              onReorder={reorderTask}
+            />
+          ))}
       </div>
 
       {/* Add Task */}

@@ -4,6 +4,7 @@ export interface Task {
   id: string;
   description: string;
   completed: boolean;
+  order: number;
 }
 
 export interface Quest {
@@ -47,4 +48,5 @@ export interface QuestContextType {
   resumeTracking: (questId: string) => void;
   togglePinQuest: (questId: string) => void;
   reorderQuest: (draggedQuestId: string, targetQuestId: string) => void;
+  reorderTask: (questId: string, draggedTaskId: string, targetTaskId: string) => void;
 }

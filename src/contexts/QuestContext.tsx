@@ -39,9 +39,12 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           order: quest.order ?? index,
           pinned: quest.pinned ?? false,
           lastModified: quest.lastModified ?? quest.createdAt ?? Date.now(),
-          tasks: quest.tasks.map(task => {
+          tasks: quest.tasks.map((task, taskIndex) => {
             const { starred, ...taskWithoutStarred } = task as Task & { starred?: boolean };
-            return taskWithoutStarred;
+            return {
+              ...taskWithoutStarred,
+              order: task.order ?? taskIndex
+            };
           })
         }));
         console.log('Migrated quests:', migratedQuests);
@@ -102,14 +105,16 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const addTask = (questId: string, description: string) => {
+    const now = Date.now();
     const newTask: Task = {
       id: crypto.randomUUID(),
       description,
       completed: false,
+      order: now,
     };
     setQuests((prev) =>
       prev.map((q) =>
-        q.id === questId ? { ...q, tasks: [...q.tasks, newTask], lastModified: Date.now() } : q
+        q.id === questId ? { ...q, tasks: [...q.tasks, newTask], lastModified: now } : q
       )
     );
   };
@@ -293,6 +298,44 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     });
   };
 
+  const reorderTask = (questId: string, draggedTaskId: string, targetTaskId: string) => {
+    setQuests((prev) => {
+      return prev.map((quest) => {
+        if (quest.id !== questId) return quest;
+
+        const draggedTask = quest.tasks.find(t => t.id === draggedTaskId);
+        const targetTask = quest.tasks.find(t => t.id === targetTaskId);
+
+        if (!draggedTask || !targetTask) return quest;
+
+        // Sort tasks by current order
+        const sortedTasks = [...quest.tasks].sort((a, b) => b.order - a.order);
+
+        // Remove dragged task from array
+        const withoutDragged = sortedTasks.filter(t => t.id !== draggedTaskId);
+
+        // Find index of target task in the filtered array
+        const targetIndex = withoutDragged.findIndex(t => t.id === targetTaskId);
+
+        // Insert dragged task before target
+        withoutDragged.splice(targetIndex, 0, draggedTask);
+
+        // Reassign order values based on new positions
+        const now = Date.now();
+        const reorderedTasks = withoutDragged.map((t, index) => ({
+          ...t,
+          order: now - (index * 1000) // Higher order = first in list, with large gaps
+        }));
+
+        return {
+          ...quest,
+          tasks: reorderedTasks,
+          lastModified: now
+        };
+      });
+    });
+  };
+
   return (
     <QuestContext.Provider
       value={{
@@ -312,6 +355,7 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         resumeTracking,
         togglePinQuest,
         reorderQuest,
+        reorderTask,
       }}
     >
       {children}

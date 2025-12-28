@@ -9,6 +9,7 @@ interface TaskCardProps {
   onToggleComplete: (questId: string, taskId: string) => void;
   onDelete: (questId: string, taskId: string) => void;
   onUpdate: (questId: string, taskId: string, updates: Partial<Task>) => void;
+  onReorder: (questId: string, draggedTaskId: string, targetTaskId: string) => void;
 }
 
 export const TaskCard: React.FC<TaskCardProps> = ({
@@ -17,9 +18,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onToggleComplete,
   onDelete,
   onUpdate,
+  onReorder,
 }) => {
   const [isEditing, setIsEditing] = React.useState(false);
   const [editText, setEditText] = React.useState(task.description);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [isDraggedOver, setIsDraggedOver] = React.useState(false);
 
   // Get quest status and completion state to determine checkbox color
   const { quests } = useQuests();
@@ -45,10 +49,75 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     }
   };
 
+  const handleDragStart = (e: React.DragEvent) => {
+    e.stopPropagation(); // Prevent quest card from being dragged
+    setIsDragging(true);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify({
+      taskId: task.id,
+      questId: questId
+    }));
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    setIsDraggedOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+
+    if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+      setIsDraggedOver(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation(); // Prevent quest card from handling drop
+    setIsDraggedOver(false);
+
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+      const { taskId: draggedTaskId, questId: draggedQuestId } = data;
+
+      console.log('Task drop - dragged:', draggedTaskId, 'target:', task.id, 'questId:', draggedQuestId);
+
+      // Only allow reordering within the same quest
+      if (draggedTaskId !== task.id && draggedQuestId === questId) {
+        console.log('Reordering task:', draggedTaskId, 'before:', task.id);
+        onReorder(questId, draggedTaskId, task.id);
+      }
+    } catch (error) {
+      console.error('Error parsing drag data:', error);
+    }
+  };
+
   return (
     <div
-      className={`bg-dark-surface border border-dark-border rounded-lg p-3 hover:border-gray-600 transition-all ${
+      data-task-card
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`bg-dark-surface border rounded-lg p-3 transition-all cursor-move ${
         task.completed ? 'opacity-60' : ''
+      } ${
+        isDragging ? 'opacity-50 scale-95' : ''
+      } ${
+        isDraggedOver ? 'border-white scale-105 shadow-xl' : 'border-dark-border hover:border-gray-600'
       }`}
     >
       <div className="flex items-center gap-3">
