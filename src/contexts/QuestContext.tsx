@@ -38,6 +38,7 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           status: quest.status || (quest.completed ? 'complete' : 'available') as 'available' | 'tracking' | 'complete',
           order: quest.order ?? index,
           pinned: quest.pinned ?? false,
+          lastModified: quest.lastModified ?? quest.createdAt ?? Date.now(),
           tasks: quest.tasks.map(task => {
             const { starred, ...taskWithoutStarred } = task as Task & { starred?: boolean };
             return taskWithoutStarred;
@@ -75,14 +76,16 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, [quests, questLines, dailyStats]);
 
   const addQuest = (title: string, questLine?: string) => {
+    const now = Date.now();
     const newQuest: Quest = {
       id: crypto.randomUUID(),
       title,
       tasks: [],
       status: 'available',
       questLine,
-      createdAt: Date.now(),
-      order: Date.now(),
+      createdAt: now,
+      lastModified: now,
+      order: now,
       pinned: false,
     };
     setQuests((prev) => [...prev, newQuest]);
@@ -106,7 +109,7 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     };
     setQuests((prev) =>
       prev.map((q) =>
-        q.id === questId ? { ...q, tasks: [...q.tasks, newTask] } : q
+        q.id === questId ? { ...q, tasks: [...q.tasks, newTask], lastModified: Date.now() } : q
       )
     );
   };
@@ -120,6 +123,7 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
               tasks: q.tasks.map((t) =>
                 t.id === taskId ? { ...t, ...updates } : t
               ),
+              lastModified: Date.now()
             }
           : q
       )
@@ -134,10 +138,10 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
           // If all tasks are deleted from a tracking quest, send it back to available
           if (updatedTasks.length === 0 && q.status === 'tracking') {
-            return { ...q, tasks: updatedTasks, status: 'available' as const };
+            return { ...q, tasks: updatedTasks, status: 'available' as const, lastModified: Date.now() };
           }
 
-          return { ...q, tasks: updatedTasks };
+          return { ...q, tasks: updatedTasks, lastModified: Date.now() };
         }
         return q;
       })
@@ -175,10 +179,10 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
           // If unchecking a task on a complete quest, move it back to tracking
           if (wasCompleted && q.status === 'complete') {
-            return { ...q, tasks: updatedTasks, status: 'tracking' as const, completedAt: undefined };
+            return { ...q, tasks: updatedTasks, status: 'tracking' as const, completedAt: undefined, lastModified: Date.now() };
           }
 
-          return { ...q, tasks: updatedTasks };
+          return { ...q, tasks: updatedTasks, lastModified: Date.now() };
         }
         return q;
       })

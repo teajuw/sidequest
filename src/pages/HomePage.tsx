@@ -25,7 +25,7 @@ export const HomePage: React.FC = () => {
             Welcome to <span className="text-success">SideQuest</span>
           </h1>
           <p className="text-xl text-gray-400 mb-8">
-            Your epic quest management system. Plan, track, and complete your quests with ease.
+            Turn overwhelming tasks into achievable quests. Break it down, level up, and watch yourself win.
           </p>
           <Link
             to="/available"

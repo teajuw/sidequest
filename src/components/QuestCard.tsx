@@ -305,11 +305,35 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest }) => {
         <span className="relative z-10">{getForwardButtonText()}</span>
       </button>
 
-      {/* Completed Date at bottom */}
+      {/* Date at bottom */}
       {quest.status === 'complete' && quest.completedAt && (
         <div className="mt-3 text-center">
           <p className="text-xs text-gray-500">
             Completed on {new Date(quest.completedAt).toLocaleDateString('en-US', {
+              weekday: 'short',
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })}
+          </p>
+        </div>
+      )}
+      {quest.status === 'available' && quest.createdAt && (
+        <div className="mt-3 text-center">
+          <p className="text-xs text-gray-500">
+            Created on {new Date(quest.createdAt).toLocaleDateString('en-US', {
+              weekday: 'short',
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })}
+          </p>
+        </div>
+      )}
+      {quest.status === 'tracking' && quest.lastModified && (
+        <div className="mt-3 text-center">
+          <p className="text-xs text-gray-500">
+            Last modified {new Date(quest.lastModified).toLocaleDateString('en-US', {
               weekday: 'short',
               year: 'numeric',
               month: 'short',
