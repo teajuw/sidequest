@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import type { Quest, QuestLine, Task, QuestContextType, DailyStats } from '../types';
+import type { Quest, QuestLine, Task, QuestContextType, DailyStats, UserProgress, MilestoneNotification } from '../types';
 import { playStartTrackingSound, playCompleteQuestSound, playCompleteTaskSound } from '../utils/sounds';
 
 const QuestContext = createContext<QuestContextType | undefined>(undefined);
@@ -10,6 +10,7 @@ interface StorageData {
   quests: Quest[];
   questLines: QuestLine[];
   dailyStats: DailyStats[];
+  userProgress?: UserProgress;
 }
 
 // Helper to get today's date in YYYY-MM-DD format
@@ -18,10 +19,115 @@ const getTodayString = (): string => {
   return today.toISOString().split('T')[0];
 };
 
+// Calculate XP required for a specific level
+const getXPForLevel = (level: number): number => {
+  if (level <= 1) return 0;
+  if (level === 2) return 50;
+  if (level === 3) return 75;
+  if (level === 4) return 100;
+  if (level === 5) return 150;
+
+  let totalXP = 50 + 75 + 100 + 150; // XP for levels 2-5
+
+  if (level <= 10) {
+    // Levels 6-10: +50 XP per level
+    for (let i = 6; i <= level; i++) {
+      totalXP += 50;
+    }
+  } else if (level <= 20) {
+    // First get XP for levels 6-10
+    totalXP += 50 * 5; // 5 levels at +50 each
+    // Then levels 11-20: +75 XP per level
+    for (let i = 11; i <= level; i++) {
+      totalXP += 75;
+    }
+  } else if (level <= 50) {
+    // Get XP for levels 6-10 and 11-20
+    totalXP += 50 * 5; // Levels 6-10
+    totalXP += 75 * 10; // Levels 11-20
+    // Then levels 21-50: +100 XP per level
+    for (let i = 21; i <= level; i++) {
+      totalXP += 100;
+    }
+  } else {
+    // Get XP for levels 6-50
+    totalXP += 50 * 5; // Levels 6-10
+    totalXP += 75 * 10; // Levels 11-20
+    totalXP += 100 * 30; // Levels 21-50
+    // Then levels 51+: +150 XP per level
+    for (let i = 51; i <= level; i++) {
+      totalXP += 150;
+    }
+  }
+
+  return totalXP;
+};
+
+// Calculate level from total XP
+const getLevelFromXP = (xp: number): number => {
+  let level = 1;
+  while (getXPForLevel(level + 1) <= xp) {
+    level++;
+  }
+  return level;
+};
+
+// Calculate current streak from daily stats
+const getCurrentStreak = (dailyStats: DailyStats[]): number => {
+  if (dailyStats.length === 0) return 0;
+
+  const sortedStats = [...dailyStats].sort((a, b) => b.date.localeCompare(a.date));
+  let streak = 0;
+  let currentDate = new Date();
+
+  for (const stat of sortedStats) {
+    const statDate = new Date(stat.date);
+    const daysDiff = Math.floor((currentDate.getTime() - statDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (daysDiff === streak && stat.tasksCompleted > 0) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+
+  return streak;
+};
+
+// Calculate streak multiplier
+const getStreakMultiplier = (streak: number): number => {
+  if (streak >= 15) return 2.5;
+  if (streak >= 10) return 2.0;
+  if (streak >= 5) return 1.5;
+  return 1.0;
+};
+
+// Calculate daily quest bonus
+const getDailyQuestBonus = (questsCompletedToday: number): number => {
+  if (questsCompletedToday >= 4) return 25;
+  if (questsCompletedToday === 3) return 10;
+  if (questsCompletedToday === 2) return 5;
+  return 0;
+};
+
+const DEFAULT_USER_PROGRESS: UserProgress = {
+  level: 1,
+  currentXP: 0,
+  totalQuestsCompleted: 0,
+  totalTasksCompleted: 0,
+  dailyQuestsCompleted: 0,
+  lastMilestones: {
+    questMilestone: 0,
+    taskMilestone: 0,
+  },
+};
+
 export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [questLines, setQuestLines] = useState<QuestLine[]>([]);
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
+  const [userProgress, setUserProgress] = useState<UserProgress>(DEFAULT_USER_PROGRESS);
+  const [milestoneNotification, setMilestoneNotification] = useState<MilestoneNotification | null>(null);
 
   // Load data from localStorage on mount
   useEffect(() => {
@@ -51,6 +157,7 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setQuests(migratedQuests);
         setQuestLines(data.questLines || []);
         setDailyStats(data.dailyStats || []);
+        setUserProgress(data.userProgress || DEFAULT_USER_PROGRESS);
       } catch (error) {
         console.error('Failed to parse stored data:', error);
       }
@@ -68,7 +175,7 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       return;
     }
 
-    const data: StorageData = { quests, questLines, dailyStats };
+    const data: StorageData = { quests, questLines, dailyStats, userProgress };
     console.log('Saving to localStorage:', data);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -76,7 +183,29 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     } catch (error) {
       console.error('Failed to save to localStorage:', error);
     }
-  }, [quests, questLines, dailyStats]);
+  }, [quests, questLines, dailyStats, userProgress]);
+
+  // Reset daily quest counter at midnight
+  useEffect(() => {
+    const checkDailyReset = () => {
+      const today = getTodayString();
+      if (userProgress.lastQuestCompletionDate && userProgress.lastQuestCompletionDate !== today) {
+        setUserProgress((prev) => ({
+          ...prev,
+          dailyQuestsCompleted: 0,
+          lastQuestCompletionDate: undefined,
+        }));
+      }
+    };
+
+    // Check on mount
+    checkDailyReset();
+
+    // Check every minute
+    const interval = setInterval(checkDailyReset, 60000);
+
+    return () => clearInterval(interval);
+  }, [userProgress.lastQuestCompletionDate]);
 
   const addQuest = (title: string, questLine?: string) => {
     const now = Date.now();
@@ -214,6 +343,14 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const completeQuest = (questId: string) => {
     playCompleteQuestSound();
+
+    const quest = quests.find(q => q.id === questId);
+    if (!quest) return;
+
+    const today = getTodayString();
+    const taskCount = quest.tasks.length;
+
+    // Update quest status
     setQuests((prev) =>
       prev.map((q) =>
         q.id === questId
@@ -221,6 +358,68 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           : q
       )
     );
+
+    // Calculate XP gain
+    const streak = getCurrentStreak(dailyStats);
+    const streakMultiplier = getStreakMultiplier(streak);
+    const baseXP = taskCount + 5; // 1 XP per task + 5 for quest
+    const xpFromQuest = Math.floor(baseXP * streakMultiplier);
+
+    // Update user progress
+    setUserProgress((prev) => {
+      const newDailyQuestsCompleted = prev.lastQuestCompletionDate === today
+        ? prev.dailyQuestsCompleted + 1
+        : 1;
+
+      const dailyBonus = getDailyQuestBonus(newDailyQuestsCompleted);
+      const totalXPGained = xpFromQuest + dailyBonus;
+
+      const newTotalXP = prev.currentXP + totalXPGained;
+      const newLevel = getLevelFromXP(newTotalXP);
+      const oldLevel = prev.level;
+
+      const newTotalQuests = prev.totalQuestsCompleted + 1;
+      const newTotalTasks = prev.totalTasksCompleted + taskCount;
+
+      // Check for milestones
+      const questMilestone = Math.floor(newTotalQuests / 5) * 5;
+      const taskMilestone = Math.floor(newTotalTasks / 25) * 25;
+
+      // Determine which notification to show (priority: level-up > quest milestone > task milestone)
+      if (newLevel > oldLevel) {
+        setMilestoneNotification({
+          type: 'level-up',
+          message: `Level Up! You reached Level ${newLevel}!`,
+          value: newLevel,
+        });
+      } else if (questMilestone > prev.lastMilestones.questMilestone && questMilestone === newTotalQuests) {
+        setMilestoneNotification({
+          type: 'quest',
+          message: `Milestone! ${newTotalQuests} Quests Completed!`,
+          value: newTotalQuests,
+        });
+      } else if (taskMilestone > prev.lastMilestones.taskMilestone && taskMilestone <= newTotalTasks) {
+        setMilestoneNotification({
+          type: 'task',
+          message: `Milestone! ${taskMilestone} Tasks Completed!`,
+          value: taskMilestone,
+        });
+      }
+
+      return {
+        ...prev,
+        level: newLevel,
+        currentXP: newTotalXP,
+        totalQuestsCompleted: newTotalQuests,
+        totalTasksCompleted: newTotalTasks,
+        dailyQuestsCompleted: newDailyQuestsCompleted,
+        lastQuestCompletionDate: today,
+        lastMilestones: {
+          questMilestone: Math.max(questMilestone, prev.lastMilestones.questMilestone),
+          taskMilestone: Math.max(taskMilestone, prev.lastMilestones.taskMilestone),
+        },
+      };
+    });
   };
 
   const resumeTracking = (questId: string) => {
@@ -336,12 +535,18 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     });
   };
 
+  const dismissMilestoneNotification = () => {
+    setMilestoneNotification(null);
+  };
+
   return (
     <QuestContext.Provider
       value={{
         quests,
         questLines,
         dailyStats,
+        userProgress,
+        milestoneNotification,
         addQuest,
         deleteQuest,
         updateQuest,
@@ -356,6 +561,7 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         togglePinQuest,
         reorderQuest,
         reorderTask,
+        dismissMilestoneNotification,
       }}
     >
       {children}

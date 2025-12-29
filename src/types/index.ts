@@ -31,10 +31,31 @@ export interface DailyStats {
   tasksCompleted: number;
 }
 
+export interface UserProgress {
+  level: number;
+  currentXP: number;
+  totalQuestsCompleted: number;
+  totalTasksCompleted: number;
+  lastQuestCompletionDate?: string; // YYYY-MM-DD format
+  dailyQuestsCompleted: number; // Resets daily at midnight
+  lastMilestones: {
+    questMilestone: number; // Last quest milestone achieved (e.g., 5, 10, 15...)
+    taskMilestone: number; // Last task milestone achieved (e.g., 25, 50, 75...)
+  };
+}
+
+export interface MilestoneNotification {
+  type: 'quest' | 'task' | 'level-up';
+  message: string;
+  value: number; // Quest/task count or new level
+}
+
 export interface QuestContextType {
   quests: Quest[];
   questLines: QuestLine[];
   dailyStats: DailyStats[];
+  userProgress: UserProgress;
+  milestoneNotification: MilestoneNotification | null;
   addQuest: (title: string, questLine?: string) => void;
   deleteQuest: (questId: string) => void;
   updateQuest: (questId: string, updates: Partial<Quest>) => void;
@@ -49,4 +70,5 @@ export interface QuestContextType {
   togglePinQuest: (questId: string) => void;
   reorderQuest: (draggedQuestId: string, targetQuestId: string) => void;
   reorderTask: (questId: string, draggedTaskId: string, targetTaskId: string) => void;
+  dismissMilestoneNotification: () => void;
 }

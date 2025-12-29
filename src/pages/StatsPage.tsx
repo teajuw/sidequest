@@ -1,10 +1,39 @@
 import React from 'react';
 import { useQuests } from '../contexts/QuestContext';
-import { CalculatorIcon, CheckIcon } from '../components/Icons';
+import { CalculatorIcon, CheckIcon, StarIcon } from '../components/Icons';
 import { HeatMap } from '../components/HeatMap';
 
+// Helper to get XP required for next level
+const getXPForLevel = (level: number): number => {
+  if (level <= 1) return 0;
+  if (level === 2) return 50;
+  if (level === 3) return 75;
+  if (level === 4) return 100;
+  if (level === 5) return 150;
+
+  let totalXP = 50 + 75 + 100 + 150;
+
+  if (level <= 10) {
+    totalXP += 50 * (level - 5);
+  } else if (level <= 20) {
+    totalXP += 50 * 5;
+    totalXP += 75 * (level - 10);
+  } else if (level <= 50) {
+    totalXP += 50 * 5;
+    totalXP += 75 * 10;
+    totalXP += 100 * (level - 20);
+  } else {
+    totalXP += 50 * 5;
+    totalXP += 75 * 10;
+    totalXP += 100 * 30;
+    totalXP += 150 * (level - 50);
+  }
+
+  return totalXP;
+};
+
 export const StatsPage: React.FC = () => {
-  const { dailyStats, quests } = useQuests();
+  const { dailyStats, quests, userProgress } = useQuests();
 
   // Get today's date string
   const getTodayString = (): string => {
@@ -57,6 +86,15 @@ export const StatsPage: React.FC = () => {
   const nextTaskMilestone = taskMilestones.find(m => m > totalTasksCompleted) || totalTasksCompleted;
   const taskProgressPercent = (totalTasksCompleted / nextTaskMilestone) * 100;
 
+  // Calculate XP progress to next level
+  const currentLevel = userProgress.level;
+  const currentXP = userProgress.currentXP;
+  const xpForCurrentLevel = getXPForLevel(currentLevel);
+  const xpForNextLevel = getXPForLevel(currentLevel + 1);
+  const xpNeededForNextLevel = xpForNextLevel - xpForCurrentLevel;
+  const xpProgressInCurrentLevel = currentXP - xpForCurrentLevel;
+  const levelProgressPercent = (xpProgressInCurrentLevel / xpNeededForNextLevel) * 100;
+
   return (
     <div className="min-h-screen bg-dark-bg p-6">
       <div className="max-w-7xl mx-auto">
@@ -67,6 +105,66 @@ export const StatsPage: React.FC = () => {
             Statistics
           </h1>
           <p className="text-gray-400 mt-2">Track your progress and achievements</p>
+        </div>
+
+        {/* Level Card - Dark Theme */}
+        <div className="mb-6 bg-dark-surface border-2 border-purple-500/30 rounded-xl p-8 shadow-xl">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="bg-purple-500/10 rounded-full p-4 border-2 border-purple-500/30">
+                <StarIcon filled className="w-12 h-12 text-purple-400" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold text-white">Level {currentLevel}</h2>
+                <p className="text-gray-400 text-sm">
+                  {xpProgressInCurrentLevel} / {xpNeededForNextLevel} XP to Level {currentLevel + 1}
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-4xl font-bold text-purple-400">{currentXP}</div>
+              <div className="text-gray-400 text-sm">Total XP</div>
+            </div>
+          </div>
+
+          {/* XP Progress Bar */}
+          <div className="mb-3">
+            <div className="w-full bg-dark-bg rounded-full h-4 border border-dark-border">
+              <div
+                className="bg-purple-500 h-4 rounded-full transition-all duration-500 flex items-center justify-end pr-2"
+                style={{ width: `${Math.min(levelProgressPercent, 100)}%` }}
+              >
+                {levelProgressPercent > 10 && (
+                  <span className="text-xs font-bold text-white">
+                    {Math.floor(levelProgressPercent)}%
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Daily Quest Progress */}
+          {userProgress.lastQuestCompletionDate === getTodayString() && userProgress.dailyQuestsCompleted > 0 && (
+            <div className="mt-4 p-3 bg-dark-bg rounded-lg border border-dark-border">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-white font-semibold text-sm">Daily Quests</span>
+                <span className="text-purple-400 font-bold">{userProgress.dailyQuestsCompleted}/4</span>
+              </div>
+              <div className="w-full bg-dark-surface rounded-full h-2 border border-dark-border">
+                <div
+                  className="bg-purple-500 h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${(userProgress.dailyQuestsCompleted / 4) * 100}%` }}
+                />
+              </div>
+              {userProgress.dailyQuestsCompleted >= 4 ? (
+                <p className="text-xs text-purple-400 mt-2">Daily bonus unlocked! +25 XP per quest!</p>
+              ) : (
+                <p className="text-xs text-gray-400 mt-2">
+                  Complete {4 - userProgress.dailyQuestsCompleted} more {4 - userProgress.dailyQuestsCompleted === 1 ? 'quest' : 'quests'} today for +25 XP bonus!
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 3-Card Layout */}
