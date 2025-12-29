@@ -45,9 +45,9 @@ export interface UserProgress {
 }
 
 export interface MilestoneNotification {
-  type: 'quest' | 'task' | 'level-up';
+  type: 'quest' | 'task' | 'level-up' | 'xp-gain';
   message: string;
-  value: number; // Quest/task count or new level
+  value: number; // Quest/task count, new level, or XP gained
 }
 
 export interface QuestContextType {

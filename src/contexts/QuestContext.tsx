@@ -385,7 +385,7 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const questMilestone = Math.floor(newTotalQuests / 5) * 5;
       const taskMilestone = Math.floor(newTotalTasks / 25) * 25;
 
-      // Determine which notification to show (priority: level-up > quest milestone > task milestone)
+      // Determine which notification to show (priority: level-up > quest milestone > task milestone > xp gain)
       if (newLevel > oldLevel) {
         setMilestoneNotification({
           type: 'level-up',
@@ -403,6 +403,13 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           type: 'task',
           message: `Milestone! ${taskMilestone} Tasks Completed!`,
           value: taskMilestone,
+        });
+      } else {
+        // Show XP gain notification
+        setMilestoneNotification({
+          type: 'xp-gain',
+          message: `+${totalXPGained} XP!`,
+          value: totalXPGained,
         });
       }
 
@@ -423,6 +430,25 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const resumeTracking = (questId: string) => {
+    const quest = quests.find(q => q.id === questId);
+    if (!quest || quest.status !== 'complete') return;
+
+    // Revert XP gain from this quest
+    const taskCount = quest.tasks.length;
+    const today = getTodayString();
+    const completionDate = quest.completedAt ? new Date(quest.completedAt).toISOString().split('T')[0] : null;
+
+    // Calculate how much XP was gained when completing this quest
+    const streak = getCurrentStreak(dailyStats);
+    const streakMultiplier = getStreakMultiplier(streak);
+    const baseXP = taskCount + 5;
+    const xpFromQuest = Math.floor(baseXP * streakMultiplier);
+
+    // Determine if this was part of daily bonus
+    // Note: We can't perfectly reverse daily bonus logic, so we'll approximate
+    // by checking if completion was today and adjusting dailyQuestsCompleted
+    const wasCompletedToday = completionDate === today;
+
     setQuests((prev) =>
       prev.map((q) =>
         q.id === questId
@@ -430,6 +456,66 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           : q
       )
     );
+
+    // Revert user progress
+    setUserProgress((prev) => {
+      if (!wasCompletedToday) {
+        // Quest was not completed today, so no daily bonus to worry about
+        // Just revert the base XP
+        const totalXPLost = xpFromQuest;
+        const newTotalXP = Math.max(0, prev.currentXP - totalXPLost);
+        const newLevel = getLevelFromXP(newTotalXP);
+        const newTotalQuests = Math.max(0, prev.totalQuestsCompleted - 1);
+        const newTotalTasks = Math.max(0, prev.totalTasksCompleted - taskCount);
+
+        const questMilestone = Math.floor(newTotalQuests / 5) * 5;
+        const taskMilestone = Math.floor(newTotalTasks / 25) * 25;
+
+        return {
+          ...prev,
+          level: newLevel,
+          currentXP: newTotalXP,
+          totalQuestsCompleted: newTotalQuests,
+          totalTasksCompleted: newTotalTasks,
+          lastMilestones: {
+            questMilestone: Math.min(questMilestone, prev.lastMilestones.questMilestone),
+            taskMilestone: Math.min(taskMilestone, prev.lastMilestones.taskMilestone),
+          },
+        };
+      }
+
+      // Quest was completed today - need to handle daily bonus properly
+      const oldDailyCount = prev.dailyQuestsCompleted;
+      const newDailyCount = Math.max(0, oldDailyCount - 1);
+
+      // Calculate bonus XP before and after to determine difference
+      const oldBonus = getDailyQuestBonus(oldDailyCount);
+      const newBonus = getDailyQuestBonus(newDailyCount);
+      const bonusXPLost = oldBonus - newBonus;
+
+      const totalXPLost = xpFromQuest + bonusXPLost;
+      const newTotalXP = Math.max(0, prev.currentXP - totalXPLost);
+      const newLevel = getLevelFromXP(newTotalXP);
+
+      const newTotalQuests = Math.max(0, prev.totalQuestsCompleted - 1);
+      const newTotalTasks = Math.max(0, prev.totalTasksCompleted - taskCount);
+
+      const questMilestone = Math.floor(newTotalQuests / 5) * 5;
+      const taskMilestone = Math.floor(newTotalTasks / 25) * 25;
+
+      return {
+        ...prev,
+        level: newLevel,
+        currentXP: newTotalXP,
+        totalQuestsCompleted: newTotalQuests,
+        totalTasksCompleted: newTotalTasks,
+        dailyQuestsCompleted: newDailyCount,
+        lastMilestones: {
+          questMilestone: Math.min(questMilestone, prev.lastMilestones.questMilestone),
+          taskMilestone: Math.min(taskMilestone, prev.lastMilestones.taskMilestone),
+        },
+      };
+    });
   };
 
   const togglePinQuest = (questId: string) => {

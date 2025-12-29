@@ -10,8 +10,10 @@ interface ToastProps {
 
 export const Toast: React.FC<ToastProps> = ({ notification, onDismiss }) => {
   useEffect(() => {
-    // Play milestone sound when toast appears
-    playMilestoneSound();
+    // Play milestone sound only for actual milestones, not for regular XP gains
+    if (notification.type !== 'xp-gain') {
+      playMilestoneSound();
+    }
 
     // Auto-dismiss after 4 seconds
     const timer = setTimeout(() => {
@@ -19,7 +21,7 @@ export const Toast: React.FC<ToastProps> = ({ notification, onDismiss }) => {
     }, 4000);
 
     return () => clearTimeout(timer);
-  }, [onDismiss]);
+  }, [onDismiss, notification.type]);
 
   const getBackgroundColor = () => {
     switch (notification.type) {
@@ -29,6 +31,8 @@ export const Toast: React.FC<ToastProps> = ({ notification, onDismiss }) => {
         return 'bg-gradient-to-r from-green-600 to-emerald-600';
       case 'task':
         return 'bg-gradient-to-r from-blue-600 to-cyan-600';
+      case 'xp-gain':
+        return 'bg-gradient-to-r from-purple-500 to-purple-700';
       default:
         return 'bg-gray-800';
     }
