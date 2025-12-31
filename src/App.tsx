@@ -7,6 +7,7 @@ import { AvailablePage } from './pages/AvailablePage';
 import { TrackingPage } from './pages/TrackingPage';
 import { CompletePage } from './pages/CompletePage';
 import { StatsPage } from './pages/StatsPage';
+import { SettingsPage } from './pages/SettingsPage';
 
 function AppContent() {
   const { milestoneNotification, dismissMilestoneNotification } = useQuests();
@@ -22,6 +23,7 @@ function AppContent() {
           <Route path="/tracking" element={<TrackingPage />} />
           <Route path="/complete" element={<CompletePage />} />
           <Route path="/stats" element={<StatsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
 

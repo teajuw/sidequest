@@ -53,11 +53,21 @@ export const Navigation: React.FC = () => {
               to="/stats"
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 isActive('/stats')
-                  ? 'bg-gray-600 text-white'
+                  ? 'bg-purple-600 text-white'
                   : 'text-gray-400 hover:text-white hover:bg-dark-hover'
               }`}
             >
               Stats
+            </Link>
+            <Link
+              to="/settings"
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                isActive('/settings')
+                  ? 'bg-gray-600 text-white'
+                  : 'text-gray-400 hover:text-white hover:bg-dark-hover'
+              }`}
+            >
+              Settings
             </Link>
           </div>
         </div>

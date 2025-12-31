@@ -71,4 +71,5 @@ export interface QuestContextType {
   reorderQuest: (draggedQuestId: string, targetQuestId: string) => void;
   reorderTask: (questId: string, draggedTaskId: string, targetTaskId: string) => void;
   dismissMilestoneNotification: () => void;
+  importData: (data: object) => void;
 }

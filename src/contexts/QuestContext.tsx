@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import type { Quest, QuestLine, Task, QuestContextType, DailyStats, UserProgress, MilestoneNotification } from '../types';
 import { playStartTrackingSound, playCompleteQuestSound, playCompleteTaskSound } from '../utils/sounds';
+import { getGistConfig, syncToGist } from '../utils/gistSync';
+import { SEED_QUESTS, SEED_QUEST_LINES, SEED_DAILY_STATS, SEED_USER_PROGRESS } from '../data/seedData';
 
 const QuestContext = createContext<QuestContextType | undefined>(undefined);
 
@@ -162,13 +164,20 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         console.error('Failed to parse stored data:', error);
       }
     } else {
-      console.log('No stored data found');
+      // No stored data - use seed data for first-time visitors
+      console.log('No stored data found, loading seed data');
+      setQuests(SEED_QUESTS);
+      setQuestLines(SEED_QUEST_LINES);
+      setDailyStats(SEED_DAILY_STATS);
+      setUserProgress(SEED_USER_PROGRESS);
     }
   }, []);
 
   // Save data to localStorage whenever it changes
   // Skip the first render to avoid overwriting on initial load
   const isInitialMount = React.useRef(true);
+  const gistSyncTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -182,6 +191,24 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       console.log('Saved successfully');
     } catch (error) {
       console.error('Failed to save to localStorage:', error);
+    }
+
+    // Debounced sync to Gist (3 seconds after last change)
+    if (gistSyncTimeout.current) {
+      clearTimeout(gistSyncTimeout.current);
+    }
+
+    const config = getGistConfig();
+    if (config) {
+      gistSyncTimeout.current = setTimeout(async () => {
+        console.log('Auto-syncing to Gist...');
+        const result = await syncToGist(data);
+        if (result.error) {
+          console.error('Gist sync failed:', result.error);
+        } else {
+          console.log('Gist sync successful');
+        }
+      }, 3000);
     }
   }, [quests, questLines, dailyStats, userProgress]);
 
@@ -625,6 +652,35 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setMilestoneNotification(null);
   };
 
+  // Import data from external source (Gist or file)
+  const importData = (data: object) => {
+    const importedData = data as StorageData;
+    if (importedData.quests) {
+      // Migrate imported quests just like on initial load
+      const migratedQuests = importedData.quests.map((quest, index) => ({
+        ...quest,
+        status: quest.status || 'available' as const,
+        order: quest.order ?? index,
+        pinned: quest.pinned ?? false,
+        lastModified: quest.lastModified ?? quest.createdAt ?? Date.now(),
+        tasks: quest.tasks.map((task, taskIndex) => ({
+          ...task,
+          order: task.order ?? taskIndex
+        }))
+      }));
+      setQuests(migratedQuests);
+    }
+    if (importedData.questLines) {
+      setQuestLines(importedData.questLines);
+    }
+    if (importedData.dailyStats) {
+      setDailyStats(importedData.dailyStats);
+    }
+    if (importedData.userProgress) {
+      setUserProgress(importedData.userProgress);
+    }
+  };
+
   return (
     <QuestContext.Provider
       value={{
@@ -648,6 +704,7 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         reorderQuest,
         reorderTask,
         dismissMilestoneNotification,
+        importData,
       }}
     >
       {children}
