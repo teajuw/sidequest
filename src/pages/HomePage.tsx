@@ -10,11 +10,13 @@ export const HomePage: React.FC = () => {
   const trackingQuests = quests.filter((q) => q.status === 'tracking');
   const completedQuests = quests.filter((q) => q.status === 'complete');
 
-  const totalTasks = quests.reduce((sum, q) => sum + q.tasks.length, 0);
-  const completedTasks = quests.reduce(
+  const _totalTasks = quests.reduce((sum, q) => sum + q.tasks.length, 0);
+  const _completedTasks = quests.reduce(
     (sum, q) => sum + q.tasks.filter((t) => t.completed).length,
     0
   );
+  void _totalTasks;
+  void _completedTasks;
 
   return (
     <div className="min-h-screen bg-dark-bg">

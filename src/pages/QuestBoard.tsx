@@ -16,9 +16,9 @@ export const QuestBoard: React.FC = () => {
     }
   };
 
-  const activeQuests = quests.filter((q) => !q.completed);
-  const pinnedQuests = activeQuests.filter((q) => q.starred).slice(0, 3);
-  const otherQuests = activeQuests.filter((q) => !q.starred);
+  const activeQuests = quests.filter((q) => q.status !== 'complete');
+  const pinnedQuests = activeQuests.filter((q) => q.pinned).slice(0, 3);
+  const otherQuests = activeQuests.filter((q) => !q.pinned);
 
   return (
     <div className="min-h-screen bg-dark-bg p-6">

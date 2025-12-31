@@ -1,16 +1,13 @@
 import React from 'react';
-import type { Quest, QuestStatus } from '../types';
+import type { Quest } from '../types';
 import { QuestCard } from './QuestCard';
-import { useQuests } from '../contexts/QuestContext';
 
 interface DraggableQuestCardProps {
   quest: Quest;
-  showCompleteButton?: boolean;
 }
 
 export const DraggableQuestCard: React.FC<DraggableQuestCardProps> = ({
   quest,
-  showCompleteButton = true
 }) => {
   const [isDragging, setIsDragging] = React.useState(false);
 
@@ -47,7 +44,7 @@ export const DraggableQuestCard: React.FC<DraggableQuestCardProps> = ({
       style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
     >
       <div style={{ pointerEvents: isDragging ? 'none' : 'auto' }}>
-        <QuestCard quest={quest} showCompleteButton={showCompleteButton} />
+        <QuestCard quest={quest} />
       </div>
     </div>
   );

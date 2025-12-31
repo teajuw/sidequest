@@ -2,7 +2,7 @@ import React from 'react';
 import type { Quest } from '../types';
 import { TaskCard } from './TaskCard';
 import { useQuests } from '../contexts/QuestContext';
-import { TrashIcon, ArrowLeftIcon, PencilIcon, StarIcon } from './Icons';
+import { ArrowLeftIcon, PencilIcon, StarIcon } from './Icons';
 
 interface QuestCardProps {
   quest: Quest;
@@ -36,8 +36,6 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest }) => {
   const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
   const allTasksComplete = totalTasks > 0 && completedTasks === totalTasks;
 
-  // Theme colors based on status
-  const themeTextClass = quest.status === 'available' ? 'text-danger' : quest.status === 'tracking' ? 'text-warning' : 'text-success';
 
   const handleAddTask = () => {
     if (newTaskText.trim()) {

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
 import type { Quest, QuestLine, Task, QuestContextType, DailyStats, UserProgress, MilestoneNotification } from '../types';
 import { playStartTrackingSound, playCompleteQuestSound, playCompleteTaskSound } from '../utils/sounds';
 import { getGistConfig, syncToGist } from '../utils/gistSync';
@@ -140,21 +140,26 @@ export const QuestProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       try {
         const data: StorageData = JSON.parse(stored);
         console.log('Parsed data:', data);
-        // Migrate old data if needed
-        const migratedQuests = (data.quests || []).map((quest, index) => ({
-          ...quest,
-          status: quest.status || (quest.completed ? 'complete' : 'available') as 'available' | 'tracking' | 'complete',
-          order: quest.order ?? index,
-          pinned: quest.pinned ?? false,
-          lastModified: quest.lastModified ?? quest.createdAt ?? Date.now(),
-          tasks: quest.tasks.map((task, taskIndex) => {
-            const { starred, ...taskWithoutStarred } = task as Task & { starred?: boolean };
-            return {
-              ...taskWithoutStarred,
-              order: task.order ?? taskIndex
-            };
-          })
-        }));
+        // Migrate old data if needed (cast to handle legacy 'completed' field)
+        const migratedQuests = (data.quests || []).map((quest, index) => {
+          const legacyQuest = quest as Quest & { completed?: boolean };
+          return {
+            ...quest,
+            status: quest.status || (legacyQuest.completed ? 'complete' : 'available') as 'available' | 'tracking' | 'complete',
+            order: quest.order ?? index,
+            pinned: quest.pinned ?? false,
+            lastModified: quest.lastModified ?? quest.createdAt ?? Date.now(),
+            tasks: quest.tasks.map((task, taskIndex) => {
+              const legacyTask = task as Task & { starred?: boolean };
+              const { starred: _starred, ...taskWithoutStarred } = legacyTask;
+              void _starred;
+              return {
+                ...taskWithoutStarred,
+                order: task.order ?? taskIndex
+              };
+            })
+          };
+        });
         console.log('Migrated quests:', migratedQuests);
         setQuests(migratedQuests);
         setQuestLines(data.questLines || []);

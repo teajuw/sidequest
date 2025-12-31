@@ -1,7 +1,6 @@
 import React from 'react';
 import { useQuests } from '../contexts/QuestContext';
 import { CalculatorIcon, CheckIcon, StarIcon } from '../components/Icons';
-import { HeatMap } from '../components/HeatMap';
 
 // Helper to get XP required for next level
 const getXPForLevel = (level: number): number => {
