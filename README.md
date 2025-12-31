@@ -1,30 +1,52 @@
-# Side Quest
+# SideQuest
 
-A modern, gamified task management system built with React, TypeScript, and Tailwind CSS. Organize your tasks as epic quests with a beautiful kanban-style interface.
+A modern, gamified task management system built with React, TypeScript, and Tailwind CSS. Organize your tasks as epic quests with a beautiful dark-themed interface.
+
+**Live Demo:** [https://teajuw.github.io/sidequest](https://teajuw.github.io/sidequest)
 
 ## Features
 
-### Core Functionality
-- **Quest & Task Management**: Create quests (projects) and add tasks as mini cards within each quest
-- **Progress Tracking**: Visual progress bars and completion percentages for each quest
+- **Quest & Task Management**: Create quests (projects) and add tasks within each quest
+- **Progress Tracking**: Visual progress bars, XP system, and level progression
+- **Quest Lines**: Organize quests by category with custom colors
+- **Stats Dashboard**: Track your overall progress, daily streaks, and milestones
+- **Cloud Sync**: Automatic backup to GitHub Gist
 - **Dark Theme**: Modern, eye-friendly dark interface with smooth animations
-- **Data Persistence**: All your quests and tasks are automatically saved to local storage
-- **Stats Dashboard**: Track your overall progress and view detailed quest breakdowns
 
-### Current Features
-- ✅ Create, edit, and delete quests
-- ✅ Add, edit, and delete tasks within quests
-- ✅ Mark tasks as complete with smooth checkbox animations
-- ✅ Star/favorite tasks and quests
-- ✅ Auto-complete quests when all tasks are finished
-- ✅ Real-time progress tracking with bars and percentages
-- ✅ Statistics page with overall metrics
+## Cloud Sync with GitHub Gist
 
-### Future Enhancements
-- Quest completion toggle with completed quests tab
-- Starred/highlighted items view for focused work
-- Quest Lines for categorizing quests by theme (academics, sports, etc.)
-- Advanced stats tracking by category
+SideQuest can automatically sync your data to a private GitHub Gist, allowing you to access your quests from any device.
+
+### Setting Up Sync
+
+1. **Create a GitHub Personal Access Token:**
+   - Go to [GitHub Settings → Developer settings → Personal access tokens → Tokens (classic)](https://github.com/settings/tokens)
+   - Click "Generate new token (classic)"
+   - Give it a name (e.g., "SideQuest Sync")
+   - Select only the **`gist`** scope
+   - Click "Generate token" and copy it (starts with `ghp_`)
+
+2. **Connect in SideQuest:**
+   - Go to Settings page
+   - Paste your token in the "GitHub Personal Access Token" field
+   - Click "Connect to GitHub"
+   - Your data will automatically sync after any changes
+
+### Restoring Your Data
+
+If you need to restore your data on a new device or browser:
+
+1. **Find your Gist ID:**
+   - Go to [gist.github.com](https://gist.github.com) and sign in
+   - Look for a gist containing `sidequest_data.json`
+   - The Gist ID is the long string in the URL: `https://gist.github.com/username/GIST_ID_HERE`
+
+2. **Restore in SideQuest:**
+   - Go to Settings page
+   - Enter your GitHub token
+   - Paste your Gist ID in the "Existing Gist ID" field
+   - Click "Connect to GitHub"
+   - Click "Load from Cloud" to restore your data
 
 ## Tech Stack
 
@@ -33,7 +55,7 @@ A modern, gamified task management system built with React, TypeScript, and Tail
 - **Styling**: Tailwind CSS v4
 - **Routing**: React Router v7
 - **State Management**: React Context API
-- **Storage**: Browser LocalStorage
+- **Storage**: Browser LocalStorage + GitHub Gist
 
 ## Getting Started
 
@@ -43,36 +65,28 @@ A modern, gamified task management system built with React, TypeScript, and Tail
 
 ### Installation
 
-1. Clone the repository:
 ```bash
-git clone <your-repo-url>
+# Clone the repository
+git clone https://github.com/teajuw/sidequest.git
 cd sidequest
-```
 
-2. Install dependencies:
-```bash
+# Install dependencies
 npm install
-```
 
-3. Start the development server:
-```bash
+# Start the development server
 npm run dev
 ```
 
-4. Open your browser to [http://localhost:5173](http://localhost:5173)
+Open your browser to [http://localhost:5173](http://localhost:5173)
 
-### Build for Production
+### Build & Deploy
 
 ```bash
+# Build for production
 npm run build
-```
 
-The built files will be in the `dist` directory.
-
-### Preview Production Build
-
-```bash
-npm run preview
+# Deploy to GitHub Pages
+npm run deploy
 ```
 
 ## Project Structure
@@ -80,48 +94,14 @@ npm run preview
 ```
 src/
 ├── components/          # React components
-│   ├── Navigation.tsx   # Top navigation bar
-│   ├── QuestCard.tsx    # Quest card with tasks
-│   └── TaskCard.tsx     # Individual task mini card
-├── contexts/           # React Context providers
-│   └── QuestContext.tsx # Global state management
-├── pages/              # Page components
-│   ├── QuestBoard.tsx   # Main kanban board view
-│   └── StatsPage.tsx    # Statistics dashboard
-├── types/              # TypeScript type definitions
-│   └── index.ts
-├── App.tsx             # Root component with routing
-├── main.tsx            # Application entry point
-└── index.css           # Global styles and Tailwind config
+├── contexts/            # React Context providers
+├── pages/               # Page components
+├── types/               # TypeScript type definitions
+├── utils/               # Utility functions (gistSync, etc.)
+├── App.tsx              # Root component with routing
+├── main.tsx             # Application entry point
+└── index.css            # Global styles
 ```
-
-## Usage
-
-### Creating a Quest
-1. Click the "+ New Quest" button on the main page
-2. Enter your quest title and press Enter or click "Create Quest"
-
-### Adding Tasks
-1. Click "+ Add Task" within any quest card
-2. Enter the task description and press Enter or click "Add"
-
-### Managing Tasks
-- **Complete**: Click the checkbox to mark a task as complete
-- **Edit**: Click on the task description to edit it inline
-- **Star**: Click the star icon to mark tasks as important
-- **Delete**: Click the X icon to remove a task
-
-### Viewing Stats
-- Click "Stats" in the navigation bar to view your progress dashboard
-- See overall completion rates and individual quest progress
-
-## Data Storage
-
-All quest and task data is stored in your browser's LocalStorage. Your data will persist between sessions but is specific to your browser and device.
-
-## Contributing
-
-Feel free to submit issues and pull requests!
 
 ## License
 
@@ -129,4 +109,4 @@ MIT
 
 ---
 
-Built with ⚔️ by [Your Name]
+Built by Trevor Ju

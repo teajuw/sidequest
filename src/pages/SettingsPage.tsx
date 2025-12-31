@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuests } from '../contexts/QuestContext';
 import {
   getGistConfig,
@@ -21,10 +21,6 @@ export const SettingsPage: React.FC = () => {
   const [syncMessage, setSyncMessage] = useState('');
   const [isValidating, setIsValidating] = useState(false);
 
-  // Import/export state
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [importMessage, setImportMessage] = useState('');
 
   // Load existing config on mount
   useEffect(() => {
@@ -115,45 +111,6 @@ export const SettingsPage: React.FC = () => {
     } else {
       setSyncStatus('error');
       setSyncMessage('No data found in cloud');
-    }
-  };
-
-  // Export to JSON file
-  const handleExport = () => {
-    const data = { quests, questLines, dailyStats, userProgress };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sidequest_backup_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  // Import from JSON file
-  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target?.result as string);
-        importData(data);
-        setImportStatus('success');
-        setImportMessage('Data imported successfully!');
-      } catch {
-        setImportStatus('error');
-        setImportMessage('Failed to parse file. Is it a valid SideQuest backup?');
-      }
-    };
-    reader.readAsText(file);
-
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
     }
   };
 
@@ -261,48 +218,6 @@ export const SettingsPage: React.FC = () => {
               }`}
             >
               {syncMessage}
-            </div>
-          )}
-        </div>
-
-        {/* Manual Import/Export Section */}
-        <div className="bg-dark-surface border border-dark-border rounded-xl p-6">
-          <h2 className="text-xl font-bold text-white mb-4">Manual Backup</h2>
-          <p className="text-gray-400 text-sm mb-4">
-            Export your data as a JSON file or import from a previous backup.
-          </p>
-
-          <div className="flex gap-3">
-            <button
-              onClick={handleExport}
-              className="flex-1 bg-dark-bg hover:bg-dark-border text-white font-semibold py-2 px-4 rounded-lg border border-dark-border transition-colors"
-            >
-              Export to File
-            </button>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex-1 bg-dark-bg hover:bg-dark-border text-white font-semibold py-2 px-4 rounded-lg border border-dark-border transition-colors"
-            >
-              Import from File
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json"
-              onChange={handleImport}
-              className="hidden"
-            />
-          </div>
-
-          {importMessage && (
-            <div
-              className={`mt-4 p-3 rounded-lg text-sm ${
-                importStatus === 'success'
-                  ? 'bg-green-900/30 text-green-400 border border-green-700'
-                  : 'bg-red-900/30 text-red-400 border border-red-700'
-              }`}
-            >
-              {importMessage}
             </div>
           )}
         </div>
