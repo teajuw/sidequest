@@ -38,7 +38,6 @@ export const QuestCard: React.FC<QuestCardProps> = ({ quest }) => {
 
   // Theme colors based on status
   const themeTextClass = quest.status === 'available' ? 'text-danger' : quest.status === 'tracking' ? 'text-warning' : 'text-success';
-  const themeBgClass = quest.status === 'available' ? 'bg-danger' : quest.status === 'tracking' ? 'bg-warning' : 'bg-success';
 
   const handleAddTask = () => {
     if (newTaskText.trim()) {
