@@ -13,7 +13,7 @@ function AppContent() {
   const { milestoneNotification, dismissMilestoneNotification } = useQuests();
 
   return (
-    <Router>
+    <Router basename="/sidequest">
       <div className="min-h-screen bg-dark-bg">
         <Navigation />
         <Routes>
